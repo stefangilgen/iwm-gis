@@ -257,13 +257,33 @@ html.embed .embed-toolbar { display: flex; }
 <body>
 <script>
 (function () {
+  function setEmbed() {
+    document.documentElement.classList.add('embed');
+    document.body.classList.add('embed');
+  }
   try {
     var p = new URLSearchParams(window.location.search);
+    /* Vollansicht mit Header erzwingen (z. B. GitHub Pages trotz fremdem Referrer) */
+    if (p.get('full') === '1' || p.get('embed') === '0') return;
+    /* Explizit einbetten (URL oder Hash) */
     if (p.get('embed') === '1' || p.get('embed') === 'true' || window.location.hash === '#embed') {
-      document.documentElement.classList.add('embed');
-      document.body.classList.add('embed');
+      setEmbed();
+      return;
     }
-  } catch (e) {}
+    /* In iframe = fast immer Einbettung */
+    if (window.self !== window.top) {
+      setEmbed();
+      return;
+    }
+    /* Voller HTML-Einbau im CMS (gleiche Seite, kein Hash): fremde Domain → Embed */
+    var h = (window.location.hostname || '').toLowerCase();
+    var localOrPreview = h === 'localhost' || h === '127.0.0.1' || window.location.protocol === 'file:';
+    var githubPages = /\.github\.io$/i.test(h);
+    if (localOrPreview || githubPages) return;
+    setEmbed();
+  } catch (e) {
+    setEmbed();
+  }
 })();
 </script>
 
